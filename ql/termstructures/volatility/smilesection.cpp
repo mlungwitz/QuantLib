@@ -3,6 +3,7 @@
 /*
  Copyright (C) 2006 Mario Pucci
  Copyright (C) 2013, 2015 Peter Caspers
+ Copyright (C) 2017 Matthias Lungwitz
 
  This file is part of QuantLib, a free-software/open-source library
  for financial quantitative analysts and developers - http://quantlib.org/
@@ -87,12 +88,28 @@ namespace QuantLib {
     Real SmileSection::digitalOptionPrice(Rate strike,
                                           Option::Type type,
                                           Real discount,
-                                          Real gap) const {
+                                          Real gap,
+										  bool vegaSmileAdjustment) const {
         Real m = volatilityType() == ShiftedLognormal ? -shift() : -QL_MAX_REAL;
         Real kl = std::max(strike-gap/2.0,m);
         Real kr = kl+gap;
+		Real adjustment = 0;
+		if (vegaSmileAdjustment)
+		{
+			// Digital Option price is the partial derivative wrt strike
+			// Therefore, correct the total derivative for the term 
+			// \frac{\partial C}{\partial \sigma} \frac{\partial sigma}{\partial \K}
+			Real sigma_up = 0;
+			Real sigma_down = 0;
+			if ((volatilityType() == Normal) || (std::fabs(strike + shift()) >= QL_EPSILON))
+			{
+				sigma_up = sqrt(variance(kr));
+				sigma_down = sqrt(variance(kl));
+			}
+			adjustment = vega(strike, discount) * (sigma_down - sigma_up) / gap;
+		}
         return (type==Option::Call ? 1.0 : -1.0) *
-            (optionPrice(kl,type,discount)-optionPrice(kr,type,discount)) / gap;
+            (optionPrice(kl,type,discount)-optionPrice(kr,type,discount)) / gap + adjustment;
     }
 
     Real SmileSection::density(Rate strike, Real discount, Real gap) const {
@@ -107,12 +124,14 @@ namespace QuantLib {
         Real atm = atmLevel();
         QL_REQUIRE(atm != Null<Real>(),
                    "smile section must provide atm level to compute option vega");
-        if (volatilityType() == ShiftedLognormal)
-            return blackFormulaVolDerivative(strike,atmLevel(),
-                                             sqrt(variance(strike)),
-                                             exerciseTime(),discount,shift())*0.01;
-        else
-            QL_FAIL("vega for normal smilesection not yet implemented");
+		if (volatilityType() == ShiftedLognormal)
+			return blackFormulaVolDerivative(strike, atmLevel(),
+				sqrt(variance(strike)),
+				exerciseTime(), discount, shift())*0.01;
+		else
+			return bachelierBlackFormulaVolDerivative(strike, atmLevel(),
+				sqrt(variance(strike)),
+				exerciseTime(), discount);			
     }
 
     Real SmileSection::volatility(Rate strike, VolatilityType volatilityType,

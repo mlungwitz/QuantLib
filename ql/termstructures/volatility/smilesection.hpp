@@ -3,6 +3,7 @@
 /*
  Copyright (C) 2006 Mario Pucci
  Copyright (C) 2013, 2015 Peter Caspers
+ Copyright (C) 2017 Matthias Lungwitz
 
  This file is part of QuantLib, a free-software/open-source library
  for financial quantitative analysts and developers - http://quantlib.org/
@@ -71,7 +72,8 @@ namespace QuantLib {
         virtual Real digitalOptionPrice(Rate strike,
                                         Option::Type type = Option::Call,
                                         Real discount=1.0,
-                                        Real gap=1.0e-5) const;
+                                        Real gap=1.0e-5,
+										bool vegaSmileAdjustment = false) const;
         virtual Real vega(Rate strike,
                           Real discount=1.0) const;
         virtual Real density(Rate strike,

@@ -9,6 +9,7 @@
  Copyright (C) 2007 Chiara Fornarola
  Copyright (C) 2013 Gary Kennedy
  Copyright (C) 2015 Peter Caspers
+ Copyright (C) 2017 Matthias Lungwitz
 
  This file is part of QuantLib, a free-software/open-source library
  for financial quantitative analysts and developers - http://quantlib.org/
@@ -584,5 +585,18 @@ namespace QuantLib {
                                      stdDev, discount);
     }
 
+	Real bachelierBlackFormulaVolDerivative(Rate strike,
+		Rate forward,
+		Real stdDev,
+		Real expiry,
+		Real discount)
+	{
+		QL_REQUIRE(expiry >= 0.0,
+			"expiry (" << expiry << ") must be non-negative");
+		return  bachelierBlackFormulaStdDevDerivative(strike,
+			forward,
+			stdDev,
+			discount)*std::sqrt(expiry);
+	}
 
 }
