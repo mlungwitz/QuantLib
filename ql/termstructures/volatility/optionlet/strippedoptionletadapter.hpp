@@ -31,6 +31,7 @@
 #include <ql/termstructures/volatility/optionlet/optionletvolatilitystructure.hpp>
 #include <ql/math/interpolation.hpp>
 #include <ql/math/interpolations/sabrinterpolation.hpp>
+#include <ql/math/interpolations/linearinterpolation.hpp>
 
 namespace QuantLib {
 
@@ -41,7 +42,9 @@ namespace QuantLib {
                                      public LazyObject {
       public:
           StrippedOptionletAdapter(
-                              const boost::shared_ptr<StrippedOptionletBase>&);
+                              const boost::shared_ptr<StrippedOptionletBase>&,
+							  LinearInterpolation::ExtrapolationType shortTimeExtrapolation = LinearInterpolation::Linear,
+							  LinearInterpolation::ExtrapolationType longTimeExtrapolation = LinearInterpolation::Linear);
 
         //! \name TermStructure interface
         //@{
@@ -73,6 +76,8 @@ namespace QuantLib {
         const boost::shared_ptr<StrippedOptionletBase> optionletStripper_;
         Size nInterpolations_;
         mutable std::vector<boost::shared_ptr<Interpolation> > strikeInterpolations_;
+		LinearInterpolation::ExtrapolationType shortTimeExtrapolation_;
+		LinearInterpolation::ExtrapolationType longTimeExtrapolation_;
     };
 
     inline void StrippedOptionletAdapter::update() {

@@ -26,18 +26,24 @@
 #include <ql/math/interpolations/sabrinterpolation.hpp>
 #include <ql/termstructures/volatility/interpolatedsmilesection.hpp>
 #include <ql/math/interpolations/cubicinterpolation.hpp>
+#include <ql/math/interpolations/linearinterpolation.hpp>
+
 
 namespace QuantLib {
 
     StrippedOptionletAdapter::StrippedOptionletAdapter(
-                const boost::shared_ptr<StrippedOptionletBase>& s)
+                const boost::shared_ptr<StrippedOptionletBase>& s,
+		LinearInterpolation::ExtrapolationType shortTimeExtrapolation,
+		LinearInterpolation::ExtrapolationType longTimeExtrapolation)
     : OptionletVolatilityStructure(s->settlementDays(),
                                    s->calendar(),
                                    s->businessDayConvention(),
                                    s->dayCounter()),
       optionletStripper_(s),
       nInterpolations_(s->optionletMaturities()),
-      strikeInterpolations_(nInterpolations_) {
+      strikeInterpolations_(nInterpolations_),
+	  shortTimeExtrapolation_(shortTimeExtrapolation),
+	  longTimeExtrapolation_(longTimeExtrapolation){
         registerWith(optionletStripper_);
     }
 
@@ -75,7 +81,7 @@ namespace QuantLib {
                                     optionletStripper_->optionletFixingTimes();
         boost::shared_ptr<LinearInterpolation> timeInterpolator(new
             LinearInterpolation(optionletTimes.begin(), optionletTimes.end(),
-                                vol.begin()));
+                                vol.begin(), shortTimeExtrapolation_, longTimeExtrapolation_));
         return timeInterpolator->operator()(length, true);
     }
 
